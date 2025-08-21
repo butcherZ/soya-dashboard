@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soya's Activity Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .dashboard {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+        .chart-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .chart-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #34495e;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #3498db;
+        }
+        .stat-label {
+            font-size: 14px;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+        canvas {
+            max-height: 400px;
+        }
+        .insight {
+            background: #e8f4f8;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <h1>🐱 Soya's Activity Dashboard</h1>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">77</div>
+                <div class="stat-label">Total Visits</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">13</div>
+                <div class="stat-label">Days Monitored</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">5.9</div>
+                <div class="stat-label">Avg Visits/Day</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">Night</div>
+                <div class="stat-label">Peak Activity</div>
+            </div>
+        </div>
+
+        <div class="insight">
+            <strong>🌙 Key Insight:</strong> Soya is primarily nocturnal, with peak activity between 10 PM - 6 AM. 
+            The most active hour is 5 AM with 11 visits, followed by 11 PM (10 visits) and 2 AM (8 visits).
+        </div>
+        
+        <div class="insight" style="background: #fff3cd; border-left-color: #ffc107;">
+            <strong>📊 Activity Pattern:</strong> Soya's visit frequency varies significantly day to day, from 1 to 11 visits. 
+            The busiest days were Aug 16 and 18 (11 visits each), while Aug 11 and 20 had only 1 visit. 
+            Most visits are brief encounters (average &lt; 1 minute), suggesting Soya is passing through rather than lingering.
+        </div>
+
+        <div class="chart-container">
+            <div class="chart-title">Hourly Activity Pattern (24-Hour)</div>
+            <canvas id="hourlyChart"></canvas>
+        </div>
+
+        <div class="chart-container">
+            <div class="chart-title">Day of Week Pattern</div>
+            <canvas id="weekdayChart"></canvas>
+        </div>
+
+        <div class="chart-container">
+            <div class="chart-title">Daily Visit Timeline</div>
+            <canvas id="timelineChart"></canvas>
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px; color: #7f8c8d; font-size: 14px;">
+            <p>🐾 Soya's Trail Camera Activity Report • August 9-21, 2025 • 77 Total Visits</p>
+        </div>
+    </div>
+
+    <script>
+        // Data from the CSV analysis
+        const hourData = [
+            {hour: 0, count: 4}, {hour: 1, count: 7}, {hour: 2, count: 8},
+            {hour: 3, count: 6}, {hour: 4, count: 6}, {hour: 5, count: 11},
+            {hour: 6, count: 6}, {hour: 7, count: 1}, {hour: 8, count: 0},
+            {hour: 9, count: 1}, {hour: 10, count: 0}, {hour: 11, count: 0},
+            {hour: 12, count: 0}, {hour: 13, count: 0}, {hour: 14, count: 0},
+            {hour: 15, count: 0}, {hour: 16, count: 0}, {hour: 17, count: 0},
+            {hour: 18, count: 0}, {hour: 19, count: 0}, {hour: 20, count: 2},
+            {hour: 21, count: 6}, {hour: 22, count: 9}, {hour: 23, count: 10}
+        ];
+
+        const weekdayData = [
+            {day: 'Sunday', count: 15},
+            {day: 'Monday', count: 14},
+            {day: 'Tuesday', count: 12},
+            {day: 'Wednesday', count: 12},
+            {day: 'Thursday', count: 8},
+            {day: 'Friday', count: 5},
+            {day: 'Saturday', count: 11}
+        ];
+
+        // Actual daily timeline data from your cat sessions
+        const dailyData = [
+            {date: '2025-08-09', count: 3}, {date: '2025-08-10', count: 5},
+            {date: '2025-08-11', count: 1}, {date: '2025-08-12', count: 4},
+            {date: '2025-08-13', count: 10}, {date: '2025-08-14', count: 5},
+            {date: '2025-08-15', count: 5}, {date: '2025-08-16', count: 11},
+            {date: '2025-08-17', count: 8}, {date: '2025-08-18', count: 11},
+            {date: '2025-08-19', count: 10}, {date: '2025-08-20', count: 1},
+            {date: '2025-08-21', count: 3}
+        ];
+
+        // Hourly Chart
+        const hourlyCtx = document.getElementById('hourlyChart').getContext('2d');
+        new Chart(hourlyCtx, {
+            type: 'bar',
+            data: {
+                labels: hourData.map(d => {
+                    const hour = d.hour;
+                    if (hour === 0) return '12 AM';
+                    if (hour === 12) return '12 PM';
+                    return hour < 12 ? `${hour} AM` : `${hour - 12} PM`;
+                }),
+                datasets: [{
+                    label: 'Number of Visits',
+                    data: hourData.map(d => d.count),
+                    backgroundColor: hourData.map(d => {
+                        // Night hours (10 PM - 6 AM) in darker blue
+                        if (d.hour >= 22 || d.hour <= 6) {
+                            return 'rgba(52, 152, 219, 0.8)';
+                        }
+                        return 'rgba(52, 152, 219, 0.4)';
+                    }),
+                    borderColor: 'rgba(52, 152, 219, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `Visits: ${context.parsed.y}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Weekday Chart
+        const weekdayCtx = document.getElementById('weekdayChart').getContext('2d');
+        new Chart(weekdayCtx, {
+            type: 'bar',
+            data: {
+                labels: weekdayData.map(d => d.day),
+                datasets: [{
+                    label: 'Number of Visits',
+                    data: weekdayData.map(d => d.count),
+                    backgroundColor: 'rgba(46, 204, 113, 0.6)',
+                    borderColor: 'rgba(46, 204, 113, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+
+        // Timeline Chart
+        const timelineCtx = document.getElementById('timelineChart').getContext('2d');
+        new Chart(timelineCtx, {
+            type: 'line',
+            data: {
+                labels: dailyData.map(d => {
+                    const date = new Date(d.date);
+                    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                }),
+                datasets: [{
+                    label: 'Daily Visits',
+                    data: dailyData.map(d => d.count),
+                    borderColor: 'rgba(155, 89, 182, 1)',
+                    backgroundColor: 'rgba(155, 89, 182, 0.2)',
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
